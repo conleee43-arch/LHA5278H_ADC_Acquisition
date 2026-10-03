@@ -1,0 +1,36 @@
+# ==============================================================================
+# .gitignore for Altera/Intel Quartus II & ModelSim FPGA Project
+# ==============================================================================
+
+# Quartus II 编译缓存与数据库
+db/
+incremental_db/
+simulation/
+
+# Quartus II 本地工作区与备份文件
+*.qws
+*.qsf.bak
+*.qsf~
+*.bak
+
+# ModelSim 仿真临时文件与库
+sim/work/
+sim/transcript
+work/
+transcript
+*.wlf
+vsim.wlf
+
+# Quartus 过程报告与临时日志 (保留 .sof 烧录文件与 .cdf 下载链文件)
+output_files/*.rpt
+output_files/*.summary
+output_files/*.smsg
+output_files/*.done
+output_files/*.jdi
+output_files/*.pin
+output_files/*.flow.rpt
+output_files/*.asm.rpt
+output_files/*.eda.rpt
+output_files/*.fit.rpt
+output_files/*.map.rpt
+output_files/*.sta.rpt
