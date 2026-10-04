@@ -85,5 +85,5 @@ adc_sync (PIN_T5) 脉冲时序示意:
 2. **DRDY 内部弱上拉**：
    - `adc_drdy`（PIN_T6）已开启 FPGA 内部弱上拉（`WEAK_PULL_UP_RESISTOR ON`），防止芯片未就绪或未供电时悬空引起 FPGA 误触发。
 3. **SPI 读写与采样时序**：
-   - SPI 模式采用 **SPI Mode 1 (CPOL=0, CPHA=1)**，FPGA 在上升沿锁存 SDO，在下降沿移出 SDI；
+   - SPI 模式采用 **SPI Mode 1 (CPOL=0, CPHA=1)**，FPGA 在 SCLK 上升沿更新 SDI、在下降沿采样 SDO；芯片侧下降沿采样 SDI、上升沿更新 SDO；
    - 退出 SPI 模式回到采样模式时，`adc_test0` 拉低至 0，芯片重回正常多通道数据输出。

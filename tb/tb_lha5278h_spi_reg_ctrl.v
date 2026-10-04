@@ -1,8 +1,8 @@
 //==============================================================================
 // Testbench Name: tb_lha5278h_spi_reg_ctrl
 // Description:    ModelSim 仿真验证平台 - 针对 LHA5278H SPI 寄存器控制器
-//                 协议模式: SPI Mode 0 (CPOL=0, CPHA=0)
-//                 内置 LHA5278H ADC 芯片 SPI Mode 0 从机行为模型
+//                 协议模式: SPI Mode 1 (CPOL=0, CPHA=1)
+//                 内置 LHA5278H ADC 芯片 SPI Mode 1 从机行为模型
 // Author:         FPGA 硬件系统专家
 // Date:           2026-10-01
 // Standard:       Verilog-2001
@@ -67,13 +67,13 @@ module tb_lha5278h_spi_reg_ctrl;
     end
 
     //==========================================================================
-    // LHA5278H ADC 芯片 SPI Mode 0 从机行为仿真模型
+    // LHA5278H ADC 芯片 SPI Mode 1 从机行为仿真模型
     //==========================================================================
     reg [7:0]  adc_reg_file [0:127];
     reg [6:0]  slave_read_addr;
     reg [15:0] slave_rx_shift;
     reg [7:0]  slave_tx_shift;
-    reg [3:0]  slave_bit_cnt;
+    reg [4:0]  slave_bit_cnt;
     reg        slave_sdo_out;
     reg        is_frame2_active;
 
@@ -87,40 +87,40 @@ module tb_lha5278h_spi_reg_ctrl;
         slave_read_addr  = 7'd0;
         slave_rx_shift   = 16'h0000;
         slave_tx_shift   = 8'h00;
-        slave_bit_cnt    = 4'd0;
+        slave_bit_cnt    = 5'd0;
         slave_sdo_out    = 1'b0;
         is_frame2_active = 1'b0;
     end
 
-    // Mode 0: CSN 下降沿提前建立首位 (MSB)
+    // Mode 1: CSN 下降沿初态 (不再在 CSN 下降沿预驱动首位)
     always @(negedge spi_cs_n) begin
-        slave_bit_cnt  <= 4'd0;
+        slave_bit_cnt  <= 5'd0;
         slave_rx_shift <= 16'h0000;
         if (is_frame2_active) begin
             slave_tx_shift <= adc_reg_file[slave_read_addr];
-            slave_sdo_out  <= adc_reg_file[slave_read_addr][7];
+            slave_sdo_out  <= 1'b0;
         end else begin
             slave_sdo_out  <= 1'b0;
         end
     end
 
-    // Mode 0: SCLK 上升沿从机采样 SDI (MOSI)
+    // Mode 1: SCLK 上升沿从机更新 SDO (MISO, MSB 先出)
     always @(posedge spi_sclk) begin
-        if (!spi_cs_n) begin
-            slave_rx_shift <= {slave_rx_shift[14:0], spi_sdi};
-            slave_bit_cnt  <= slave_bit_cnt + 1'b1;
-        end
-    end
-
-    // Mode 0: SCLK 下降沿从机更新 SDO (MISO)
-    always @(negedge spi_sclk) begin
         if (!spi_cs_n && is_frame2_active) begin
-            if (slave_bit_cnt < 4'd8) begin
-                slave_sdo_out  <= slave_tx_shift[6];
+            if (slave_bit_cnt < 5'd8) begin
+                slave_sdo_out  <= slave_tx_shift[7];
                 slave_tx_shift <= {slave_tx_shift[6:0], 1'b0};
             end else begin
                 slave_sdo_out  <= 1'b0;
             end
+        end
+    end
+
+    // Mode 1: SCLK 下降沿从机采样 SDI (MOSI)
+    always @(negedge spi_sclk) begin
+        if (!spi_cs_n) begin
+            slave_rx_shift <= {slave_rx_shift[14:0], spi_sdi};
+            slave_bit_cnt  <= slave_bit_cnt + 1'b1;
         end
     end
 
@@ -162,7 +162,7 @@ module tb_lha5278h_spi_reg_ctrl;
         error_count    = 0;
 
         $display("=================================================================");
-        $display(">>> Starting Testbench for LHA5278H SPI Controller (Mode 0) <<<");
+        $display(">>> Starting Testbench for LHA5278H SPI Controller (Mode 1) <<<");
         $display("=================================================================");
 
         #(SYS_CLK_PERIOD * 10);
@@ -172,7 +172,7 @@ module tb_lha5278h_spi_reg_ctrl;
         #(SYS_CLK_PERIOD * 10);
 
         // 测试 1: 写入 0x00 寄存器 0xA5
-        $display("\n[TB] Writing 0xA5 to Address 0x00 (Mode 0 Single-Frame Write) ...");
+        $display("\n[TB] Writing 0xA5 to Address 0x00 (Mode 1 Single-Frame Write) ...");
         @(posedge sys_clk);
         wr_en <= 1'b1;
         addr  <= 7'h00;
@@ -183,9 +183,9 @@ module tb_lha5278h_spi_reg_ctrl;
         @(posedge done);
         $display("[TB] %t: Write Operation Completed.", $time);
 
-        // 测试 2: 双帧回读 0x00 寄存器 (Frame 2 发送 16'h0000)
+        // 测试 2: 双帧回读 0x00 寄存器 (Frame 2 发送 16'h8000)
         #(SYS_CLK_PERIOD * 20);
-        $display("\n[TB] Reading from Address 0x00 (Mode 0 Two-Frame Read) ...");
+        $display("\n[TB] Reading from Address 0x00 (Mode 1 Two-Frame Read) ...");
         @(posedge sys_clk);
         rd_en <= 1'b1;
         addr  <= 7'h00;
@@ -205,7 +205,7 @@ module tb_lha5278h_spi_reg_ctrl;
 
         #(SYS_CLK_PERIOD * 50);
         if (error_count == 0) begin
-            $display("\n>>> ALL TESTS PASSED! SPI Mode 0 Verified 100%% Successfully! <<<");
+            $display("\n>>> ALL TESTS PASSED! SPI Mode 1 Verified 100%% Successfully! <<<");
         end else begin
             $display("\n>>> TEST FAILED with %0d errors! <<<", error_count);
         end
