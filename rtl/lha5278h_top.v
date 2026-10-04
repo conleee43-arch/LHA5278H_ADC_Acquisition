@@ -80,7 +80,6 @@ module lha5278h_top #(
     reg  [6:0]  spi_addr;
     reg  [7:0]  spi_wdata;
     wire [7:0]  spi_rdata;
-    wire        spi_busy;
     wire        spi_done;
 
     wire        spi_cs_n;
@@ -100,7 +99,7 @@ module lha5278h_top #(
         .addr      (spi_addr),
         .wdata     (spi_wdata),
         .rdata     (spi_rdata),
-        .busy      (spi_busy),
+        .busy      (), // 顶层依靠 spi_done 握手，此处显式悬空
         .done      (spi_done),
         .spi_cs_n  (spi_cs_n),
         .spi_sclk  (spi_sclk),
@@ -112,7 +111,6 @@ module lha5278h_top #(
     // 8 通道并行数据接收器
     //==========================================================================
     reg         rx_en;
-    wire        rx_busy;
     wire        rx_sclk;
     wire [7:0]  dout_bus;
 
@@ -123,7 +121,7 @@ module lha5278h_top #(
         .sys_clk   (sys_clk),
         .sys_rst_n (sys_rst_n),
         .rx_en     (rx_en),
-        .rx_busy   (rx_busy),
+        .rx_busy   (), // 顶层以 data_valid 为准，此处显式悬空
         .data_valid(data_valid),
         .ch1_data  (ch1_data),
         .ch2_data  (ch2_data),

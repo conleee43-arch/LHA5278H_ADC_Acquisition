@@ -89,8 +89,7 @@ module lha5278h_spi_reg_ctrl #(
 
     // 分频计数器与关键节拍
     reg [CNT_WIDTH-1:0] div_cnt;
-    wire                tick_sample;// SCLK 高电平中间采样点 (MISO 数据稳定)
-    wire                tick_half;  // 半周期翻转点 (div_cnt == CLK_DIV_HALF - 1, SCLK 下降沿)
+    wire                tick_sample;// SCLK 下降沿/半周期采样点 (div_cnt == CLK_DIV_HALF - 1)
     wire                tick_full;  // 周期结束点 (div_cnt == CLK_DIV_TOTAL - 1)
 
     // 传输位计数器与余量延时计数器
@@ -118,8 +117,7 @@ module lha5278h_spi_reg_ctrl #(
     // 2. SPI 分频计数器逻辑
     //    当处于忙碌状态(busy=1)时持续以 CLK_DIV_TOTAL 循环计数
     //==========================================================================
-    assign tick_sample = (div_cnt == (CLK_DIV_HALF - 1)); // Mode 1: SCLK 下降沿数据采样点 (数据稳定建立半周期后采样)
-    assign tick_half   = (div_cnt == (CLK_DIV_HALF - 1)); // 半周期翻转点 (SCLK 下降沿)
+    assign tick_sample = (div_cnt == (CLK_DIV_HALF - 1)); // Mode 1: SCLK 下降沿采样点 (半周期数据采样)
     assign tick_full   = (div_cnt == (CLK_DIV_TOTAL - 1)); // 周期结束点
 
     always @(posedge sys_clk or negedge sys_rst_n) begin
